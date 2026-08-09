@@ -1,0 +1,21 @@
+# python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# virtual environment
+.venv/
+venv/
+
+# environment variables (keep .env.example tracked)
+.env
+
+# database (local dev only — real data lives in Qdrant + seed script)
+portfolio.db
+
+# tests / linting caches
+.pytest_cache/
+.ruff_cache/
+
+# OS
+.DS_Store

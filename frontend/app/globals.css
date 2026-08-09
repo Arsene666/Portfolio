@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0A0E17;
+  --bg-elevated: #10162A;
+  --ink: #F1F4FA;
+  --muted: #8B94AC;
+  --border: #212A42;
+  --accent: #3b82f6;
+  --accent-strong: #2563eb;
+  --gold: #E8B563;
+}
+
+.light {
+  --bg: #F5F6FA;
+  --bg-elevated: #FFFFFF;
+  --ink: #10162A;
+  --muted: #5B6478;
+  --border: #DFE2ED;
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --gold: #B8862F;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-padding-top: 5rem;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* A subtle, theme-agnostic "lift" on hover/active — used on buttons, cards,
+   and badges throughout, mirroring the reference site's interaction style. */
+.hover-elevate {
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+.hover-elevate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: currentColor;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.hover-elevate:hover::after {
+  opacity: 0.06;
+}
+.hover-elevate:active::after {
+  opacity: 0.12;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
