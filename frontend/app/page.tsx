@@ -7,6 +7,8 @@ import { JourneySection } from "@/components/JourneySection";
 import { ContactSection } from "@/components/ContactSection";
 import { Footer } from "@/components/Footer";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const projects = await getProjects();
 
