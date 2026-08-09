@@ -11,7 +11,7 @@ from typing import Literal, TypedDict
 from app.core.config import get_settings
 from app.services.rag.embeddings import embed_query
 from app.services.rag.llm_client import LLMError, call_llm, stream_llm
-from app.services.rag.memory import append_turn, get_history
+from app.services.rag.memory import append_turn, get_history, get_question_count
 from app.services.rag.qdrant_store import search
 
 NO_CONTEXT_ANSWER = (
@@ -28,6 +28,12 @@ RETRIEVAL_ERROR_ANSWER = (
 LLM_ERROR_ANSWER = (
     "Something went wrong while contacting the language model. Please try "
     "again in a moment."
+)
+
+LIMIT_REACHED_ANSWER = (
+    "You've reached the question limit for this conversation — that's a "
+    "deliberate limit to keep this demo available for everyone. Feel free "
+    "to reach out directly through the contact form for anything else!"
 )
 
 HIGH_CONFIDENCE_THRESHOLD = 0.75
@@ -70,6 +76,13 @@ def _build_system_prompt(context: str) -> str:
 
 async def answer_question(question: str, session_id: str = "default") -> ChatResult:
     settings = get_settings()
+    if get_question_count(session_id) >= settings.max_questions_per_session:
+        yield {"type": "token", "content": LIMIT_REACHED_ANSWER}
+        yield {"type": "done", "sources": [], "confidence": "no_context"}
+        return
+    
+    if get_question_count(session_id) >= settings.max_questions_per_session:
+        return {"answer": LIMIT_REACHED_ANSWER, "sources": [], "confidence": "no_context"}
 
     try:
         query_embedding = embed_query(question)

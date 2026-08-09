@@ -23,12 +23,13 @@ class Settings(BaseSettings):
     qdrant_url: str | None = None
     qdrant_api_key: str | None = None
     qdrant_collection_name: str = "portfolio_knowledge"
-    embedding_model_name: str = "intfloat/multilingual-e5-small"
+    embedding_model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     openrouter_api_key: str | None = None
     llm_model_name: str = "openrouter/free"
     llm_temperature: float = 0.2
     rag_top_k: int = 5
-    rag_similarity_threshold: float = 0.55
+    rag_similarity_threshold: float = 0.22
+    max_questions_per_session: int = 10
 
 
 @lru_cache
