@@ -76,11 +76,7 @@ def _build_system_prompt(context: str) -> str:
 
 async def answer_question(question: str, session_id: str = "default") -> ChatResult:
     settings = get_settings()
-    if get_question_count(session_id) >= settings.max_questions_per_session:
-        yield {"type": "token", "content": LIMIT_REACHED_ANSWER}
-        yield {"type": "done", "sources": [], "confidence": "no_context"}
-        return
-    
+
     if get_question_count(session_id) >= settings.max_questions_per_session:
         return {"answer": LIMIT_REACHED_ANSWER, "sources": [], "confidence": "no_context"}
 
