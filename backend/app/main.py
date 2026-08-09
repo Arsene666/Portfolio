@@ -5,14 +5,19 @@ from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.db.base import Base
+from app.db.seed import seed
 from app.db.session import engine
 
 settings = get_settings()
 configure_logging(settings.environment)
 
-# Phase 2: simple create_all for dev (SQLite). Swap for Alembic migrations
-# once a real Postgres database is provisioned in a later phase.
 Base.metadata.create_all(bind=engine)
+
+# Re-seed on every boot. Idempotent (skips existing slugs), and necessary
+# on hosts like Render's free tier where the local SQLite file is wiped on
+# every redeploy/restart — without this, /api/v1/projects would come back
+# empty after the app spins back up from an idle sleep.
+seed()
 
 app = FastAPI(
     title=settings.app_name,
