@@ -18,15 +18,16 @@ async def chat(payload: ChatRequest) -> ChatResponse:
 
 @router.post("/stream")
 async def chat_stream(payload: ChatRequest) -> StreamingResponse:
-    """Same as POST /chat, but streams the answer as Server-Sent Events.
-
-    Each event is a JSON payload: {"type": "token", "content": "..."} while
-    the answer is being generated, then exactly one
-    {"type": "done", "sources": [...], "confidence": "..."} at the end.
-    """
-
     async def event_stream():
         async for event in stream_answer(payload.message, payload.session_id):
             yield f"data: {json.dumps(event)}\n\n"
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
