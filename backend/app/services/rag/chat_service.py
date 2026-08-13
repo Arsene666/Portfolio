@@ -80,20 +80,22 @@ async def answer_question(question: str, session_id: str = "default") -> ChatRes
     if get_question_count(session_id) >= settings.max_questions_per_session:
         return {"answer": LIMIT_REACHED_ANSWER, "sources": [], "confidence": "no_context"}
 
+    history = get_history(session_id)
+
     try:
         query_embedding = await embed_query(question)
         results = search(query_embedding, top_k=settings.rag_top_k)
     except Exception:  # noqa: BLE001 — any retrieval failure is a "not ready" state
         return {"answer": RETRIEVAL_ERROR_ANSWER, "sources": [], "confidence": "no_context"}
 
-    if not results or results[0]["score"] < settings.rag_similarity_threshold:
+    no_relevant_context = not results or results[0]["score"] < settings.rag_similarity_threshold
+    if no_relevant_context and not history:
         return {"answer": NO_CONTEXT_ANSWER, "sources": [], "confidence": "no_context"}
 
     context = "\n\n---\n\n".join(
         f"[{r['source_name']} - {r['section']}]\n{r['content']}" for r in results
     )
     system_prompt = _build_system_prompt(context)
-    history = get_history(session_id)
     messages = [
         {"role": "system", "content": system_prompt},
         *history,
@@ -126,6 +128,13 @@ async def stream_answer(
     """
     settings = get_settings()
 
+    if get_question_count(session_id) >= settings.max_questions_per_session:
+        yield {"type": "token", "content": LIMIT_REACHED_ANSWER}
+        yield {"type": "done", "sources": [], "confidence": "no_context"}
+        return
+
+    history = get_history(session_id)
+
     try:
         query_embedding = await embed_query(question)
         results = search(query_embedding, top_k=settings.rag_top_k)
@@ -134,7 +143,8 @@ async def stream_answer(
         yield {"type": "done", "sources": [], "confidence": "no_context"}
         return
 
-    if not results or results[0]["score"] < settings.rag_similarity_threshold:
+    no_relevant_context = not results or results[0]["score"] < settings.rag_similarity_threshold
+    if no_relevant_context and not history:
         yield {"type": "token", "content": NO_CONTEXT_ANSWER}
         yield {"type": "done", "sources": [], "confidence": "no_context"}
         return
@@ -143,13 +153,13 @@ async def stream_answer(
         f"[{r['source_name']} - {r['section']}]\n{r['content']}" for r in results
     )
     system_prompt = _build_system_prompt(context)
-    history = get_history(session_id)
     messages = [
         {"role": "system", "content": system_prompt},
         *history,
         {"role": "user", "content": question},
     ]
 
+    
     full_answer = ""
     try:
         async for chunk in stream_llm(messages):

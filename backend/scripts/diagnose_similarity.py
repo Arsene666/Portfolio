@@ -6,6 +6,7 @@ Usage:
     python scripts/diagnose_similarity.py "Why should I hire Arsène?"
 """
 
+import asyncio
 import sys
 from pathlib import Path
 
@@ -16,7 +17,7 @@ from app.services.rag.embeddings import embed_query  # noqa: E402
 from app.services.rag.qdrant_store import get_qdrant_client  # noqa: E402
 
 
-def main() -> None:
+async def main() -> None:
     question = sys.argv[1] if len(sys.argv) > 1 else "Why should I hire Arsène?"
     settings = get_settings()
 
@@ -37,7 +38,7 @@ def main() -> None:
     print(f"Points in '{settings.qdrant_collection_name}': {count}")
     print()
 
-    query_vector = embed_query(question)
+    query_vector = await embed_query(question)
     results = client.query_points(
         collection_name=settings.qdrant_collection_name,
         query=query_vector,
@@ -56,4 +57,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
