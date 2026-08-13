@@ -1,30 +1,65 @@
-"""Embedding model wrapper using fastembed (ONNX Runtime) instead of
-sentence-transformers/PyTorch — chosen specifically to fit within Render's
-free-tier 512MB memory limit. Importing torch + sentence-transformers alone
-uses over 700MB; fastembed's ONNX backend uses a fraction of that.
+"""Embedding client using Cohere's hosted Embed API — deliberately *not* a
+local model.
+
+Two different local approaches were tried first (sentence-transformers,
+then the lighter fastembed) and both still pushed Render's free-tier
+512MB memory limit over the edge under real traffic. Calling a hosted API
+instead removes the model from this process's memory entirely; the only
+cost is a network round-trip per request, which is a fine trade-off for a
+low-traffic portfolio chat.
 """
 
-from functools import lru_cache
-
-from fastembed import TextEmbedding
+import httpx
 
 from app.core.config import get_settings
 
+COHERE_EMBED_URL = "https://api.cohere.ai/v1/embed"
 
-@lru_cache
-def get_embedding_model() -> TextEmbedding:
+
+class EmbeddingError(Exception):
+    """Raised when the Cohere embed API call fails."""
+
+
+async def _embed(texts: list[str], input_type: str) -> list[list[float]]:
     settings = get_settings()
-    return TextEmbedding(
-        model_name=settings.embedding_model_name,
-        cache_dir="/app/.fastembed_cache",
-    )
+
+    if not settings.cohere_api_key:
+        raise EmbeddingError(
+            "COHERE_API_KEY is not set in .env — get a free key at "
+            "dashboard.cohere.com."
+        )
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            COHERE_EMBED_URL,
+            headers={
+                "Authorization": f"Bearer {settings.cohere_api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "texts": texts,
+                "model": settings.embedding_model_name,
+                "input_type": input_type,
+            },
+        )
+
+    if response.status_code != 200:
+        raise EmbeddingError(
+            f"Cohere embed request failed ({response.status_code}): "
+            f"{response.text[:300]}"
+        )
+
+    data = response.json()
+    return data["embeddings"]
 
 
-def embed_passages(texts: list[str]) -> list[list[float]]:
-    model = get_embedding_model()
-    return [vec.tolist() for vec in model.embed(texts)]
+async def embed_passages(texts: list[str]) -> list[list[float]]:
+    """Embed document chunks for storage. Cohere distinguishes documents
+    from queries via input_type, for better retrieval quality."""
+    return await _embed(texts, input_type="search_document")
 
 
-def embed_query(text: str) -> list[float]:
-    model = get_embedding_model()
-    return next(model.embed([text])).tolist()
+async def embed_query(text: str) -> list[float]:
+    """Embed an incoming user question."""
+    vectors = await _embed([text], input_type="search_query")
+    return vectors[0]

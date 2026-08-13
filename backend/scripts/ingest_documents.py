@@ -1,12 +1,13 @@
 """Ingest CV/project documents into Qdrant: chunk -> embed -> upsert.
 
-Requires QDRANT_URL and QDRANT_API_KEY to be set in backend/.env — see the
-Qdrant Cloud setup section in the backend README.
+Requires QDRANT_URL, QDRANT_API_KEY, and COHERE_API_KEY to be set in
+backend/.env — see the README for how to get a free Cohere key.
 
 Usage:
     python scripts/ingest_documents.py
 """
 
+import asyncio
 import sys
 from pathlib import Path
 
@@ -20,7 +21,7 @@ from app.services.rag.qdrant_store import (  # noqa: E402
 )
 
 
-def main() -> None:
+async def main() -> None:
     raw_dir = Path(__file__).resolve().parent.parent / "data" / "raw"
 
     print(f"Loading and chunking documents from {raw_dir} ...")
@@ -31,8 +32,8 @@ def main() -> None:
         print("No chunks found — check that backend/data/raw/*.md exist.")
         return
 
-    print("Embedding chunks (downloads the model on first run) ...")
-    embeddings = embed_passages([chunk.content for chunk in chunks])
+    print("Embedding chunks via the Cohere API ...")
+    embeddings = await embed_passages([chunk.content for chunk in chunks])
     vector_size = len(embeddings[0])
     print(f"  -> vector size: {vector_size}")
 
@@ -44,4 +45,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

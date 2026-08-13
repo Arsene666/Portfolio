@@ -81,7 +81,7 @@ async def answer_question(question: str, session_id: str = "default") -> ChatRes
         return {"answer": LIMIT_REACHED_ANSWER, "sources": [], "confidence": "no_context"}
 
     try:
-        query_embedding = embed_query(question)
+        query_embedding = await embed_query(question)
         results = search(query_embedding, top_k=settings.rag_top_k)
     except Exception:  # noqa: BLE001 — any retrieval failure is a "not ready" state
         return {"answer": RETRIEVAL_ERROR_ANSWER, "sources": [], "confidence": "no_context"}
@@ -127,7 +127,7 @@ async def stream_answer(
     settings = get_settings()
 
     try:
-        query_embedding = embed_query(question)
+        query_embedding = await embed_query(question)
         results = search(query_embedding, top_k=settings.rag_top_k)
     except Exception:  # noqa: BLE001 — any retrieval failure is a "not ready" state
         yield {"type": "token", "content": RETRIEVAL_ERROR_ANSWER}

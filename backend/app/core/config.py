@@ -23,7 +23,8 @@ class Settings(BaseSettings):
     qdrant_url: str | None = None
     qdrant_api_key: str | None = None
     qdrant_collection_name: str = "portfolio_knowledge"
-    embedding_model_name: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    embedding_model_name: str = "embed-multilingual-light-v3.0"
+    cohere_api_key: str | None = None
     openrouter_api_key: str | None = None
     llm_model_name: str = "openrouter/free"
     llm_temperature: float = 0.2
