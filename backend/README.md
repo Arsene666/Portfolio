@@ -1,4 +1,4 @@
-# Portfolio backend — Phase 1 + 2 + 4 + 5
+# Portfolio backend
 
 FastAPI skeleton + Project data model/endpoints + full RAG pipeline
 (chunking, embeddings, Qdrant, LLM via OpenRouter) behind `/api/v1/chat`.
@@ -143,7 +143,7 @@ in the platform dashboard: `ALLOWED_ORIGINS`, `DATABASE_URL`, `QDRANT_URL`,
 `QDRANT_API_KEY`, `QDRANT_COLLECTION_NAME`, `OPENROUTER_API_KEY`,
 `LLM_MODEL_NAME`.
 
-## What's next (Phase 6)
+## What's next 
 
 - Add the chat widget to the frontend (floating button, streaming
   responses, suggested questions, sources shown under each answer).
